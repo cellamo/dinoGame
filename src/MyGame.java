@@ -1,16 +1,32 @@
-import javafx.animation.AnimationTimer;
+import com.sun.org.apache.bcel.internal.generic.INSTANCEOF;
+import javafx.animation.*;
 import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.util.Duration;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
-import javax.swing.text.html.ImageView;
+import java.sql.Time;
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 public class MyGame extends Application {
@@ -28,6 +44,14 @@ public class MyGame extends Application {
     ArrayList<GameObject> obstacles;
     GameObject platform;
     GameObject background;
+    GameObject bird;
+    GameObject cactus;
+    GameObject bigCactus;
+
+    static int scoreInt = 0;
+    static int levelInt = 1;
+    Text scoreText;
+    Text levelText;
 
 
     // Your game parameters
@@ -64,18 +88,6 @@ public class MyGame extends Application {
 
         primaryStage.setResizable(false);
 
-        final long startNanoTime = System.nanoTime();
-
-        new AnimationTimer() {
-            public void handle(long currentNanoTime) {
-                double t = (currentNanoTime - startNanoTime) / 1000000000.0;
-                double x = 232 + 128 * Math.cos(t);
-                double y = 232 + 128 * Math.sin(t);
-                // background image clears canvas
-                player.render(graphicsContext);
-            }
-        }.start();
-
         primaryStage.show();
     }
 
@@ -91,24 +103,40 @@ public class MyGame extends Application {
 
 
         // TODO: Init game objects and parameters like key event listeners, timers etc.
+        obstacles = new ArrayList<>();
 
         background = new GameObject("res/background.png", 0, 0, 1000, 400);
         background.render(graphicsContext);
 
-        platform = new GameObject("res/platform.png", 0, 0, 1000, 30);
+        levelText = new Text();
+        levelText.setText("Level: " + levelInt);
+        levelText.setX(10);
+        levelText.setY(60);
+        levelText.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        levelText.setFill(Color.MEDIUMVIOLETRED);
+        rootViewContainer.getChildren().add(levelText);
+
+        scoreText = new Text();
+        scoreText.setText("Score: " + scoreInt);
+        scoreText.setX(10);
+        scoreText.setY(30);
+        scoreText.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        scoreText.setFill(Color.MEDIUMVIOLETRED);
+        rootViewContainer.getChildren().add(scoreText);
+
+
+
+        platform = new GameObject("res/platform.png", 0, 0, 1000, 20);
         platform.setX(0);
         platform.setY(background.getHeight() - platform.getHeight());
         platform.render(graphicsContext);
 
-        Dino dino = new Dino("res/player.png", 0, 0, 70, 70);
-        dino.setX(60);
-        dino.setY(platform.getY() - dino.getHeight() + 10);
-        dino.render(graphicsContext);
-        player = dino;
 
+        player = new Dino("res/player.png", 0, 0, 70, 70);
+        player.setX(60);
+        player.setY(Dino.LAND_Y);
 
-
-
+        player.render(graphicsContext);
 
         initKeyEventListeners();
         initTimer();
@@ -122,14 +150,26 @@ public class MyGame extends Application {
      * keys are pressed or released by means of this two objects and make appropriate changes in your game.
      */
     void initKeyEventListeners() {
+
         keyPressed = new EventHandler<KeyEvent>() {
+            private final AtomicLong lastUpPressTimestamp = new AtomicLong();
+
             @Override
             public void handle(KeyEvent event) {
                 switch (event.getCode()) {
                     case UP: // Jump
                         graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-                        ((Dino) player).jump();
-                        refresh();
+
+                        long currentTimestamp = System.currentTimeMillis();
+
+                        // Check if it has been more than 1 second since the last time the UP key was pressed
+                        if (currentTimestamp - lastUpPressTimestamp.get() > 1000) {
+                            // It has been more than 1 second, so update the timestamp and execute the code
+                            lastUpPressTimestamp.set(currentTimestamp);
+
+                            // Put the code you want to execute once per second here
+                            ((Dino)player).jump();
+                        }
                         break;
                     case LEFT:
                         graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -157,8 +197,8 @@ public class MyGame extends Application {
                 switch (event.getCode()) {
                     case UP:
                         refresh();
+                        ((Dino) player).jump();
                         break;
-
                     case LEFT:
                         refresh();
                         break;
@@ -177,8 +217,14 @@ public class MyGame extends Application {
     private void refresh() {
         graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
         background.render(graphicsContext);
-        player.render(graphicsContext);
         platform.render(graphicsContext);
+        player.render(graphicsContext);
+        for (GameObject obstacle : obstacles) {
+            obstacle.render(graphicsContext);
+        }
+
+
+
     }
 
     /**
@@ -187,12 +233,65 @@ public class MyGame extends Application {
      * and update your game score etc. This is the main lifecycle of your game.
      */
     void initTimer() {
+
+        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
+
+
+            if (obstacles.size() <= 3) {
+                int random = (int) ((Math.random() * 10 + 1) / 3);
+                if (random == 0) {
+                    obstacles.add(new Cactus("res/cactus.png", 1000, 290, 50, 100));
+                } else if (random == 1) {
+                    obstacles.add(new BigCactus("res/cactus_big.png", 1000, 290, 100, 100));
+                } else if (random == 2) {
+                    if (levelInt > 1) {
+                        obstacles.add(new Bird("res/bird1.png", 1000, 250, 50, 50));
+                    }
+                }
+            }
+
+        }
+
+        ));
+        timeline.setCycleCount(Animation.INDEFINITE);
+        timeline.play();
+
         timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
+
+
                 /* In this method's body, you can  redraw your objects to make a movement effect,
                    check whether any of your objects collided or not,
                    and update your game score etc. This is the main lifecycle of your game.*/
+                rootViewContainer.getChildren().remove(scoreText);
+                scoreText.setText("Score: " + scoreInt);
+                rootViewContainer.getChildren().add(scoreText);
+
+                rootViewContainer.getChildren().remove(levelText);
+                levelText.setText("Level: " + levelInt);
+                rootViewContainer.getChildren().add(levelText);
+
+                // background image clears canvas
+                background.render(graphicsContext);
+                platform.render(graphicsContext);
+                player.render(graphicsContext);
+
+                for (GameObject obstacle : obstacles) {
+                    if (obstacle.getX() < 0) {
+                        obstacles.remove(obstacle);
+                        scoreInt++;
+                        if (scoreInt % 10 == 0) {
+                            levelInt++;
+                        }
+                        break;
+                    }
+
+                }
+                for (GameObject obstacle : obstacles) {
+                    obstacle.setX(obstacle.getX() - (5 + levelInt));
+                    obstacle.render(graphicsContext);
+                }
             }
         };
     }
