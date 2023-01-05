@@ -31,8 +31,8 @@ public class MyGame extends Application {
 
 
     // Your game parameters
-    final int GAME_WIDTH = 1000;
-    final int GAME_HEIGHT = 400;
+    static final int GAME_WIDTH = 1000;
+    static final int GAME_HEIGHT = 400;
 
     /**
      * Launch a JavaFX application.
@@ -62,8 +62,7 @@ public class MyGame extends Application {
         jScene.setOnKeyPressed(keyPressed);
         jScene.setOnKeyReleased(keyReleased);
 
-
-
+        primaryStage.setResizable(false);
 
         final long startNanoTime = System.nanoTime();
 
@@ -96,14 +95,14 @@ public class MyGame extends Application {
         background = new GameObject("res/background.png", 0, 0, 1000, 400);
         background.render(graphicsContext);
 
-        platform = new GameObject("res/platform.png", 0, 0, 1000, 50);
+        platform = new GameObject("res/platform.png", 0, 0, 1000, 30);
         platform.setX(0);
-        platform.setY(350);
+        platform.setY(background.getHeight() - platform.getHeight());
         platform.render(graphicsContext);
 
-        Dino dino = new Dino("res/player.png", 0, 0, 100, 100);
-        dino.setX(100);
-        dino.setY(300);
+        Dino dino = new Dino("res/player.png", 0, 0, 70, 70);
+        dino.setX(60);
+        dino.setY(platform.getY() - dino.getHeight() + 10);
         dino.render(graphicsContext);
         player = dino;
 
@@ -127,19 +126,9 @@ public class MyGame extends Application {
             @Override
             public void handle(KeyEvent event) {
                 switch (event.getCode()) {
-                    case UP:
+                    case UP: // Jump
                         graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-                        //limit how much the player can jump
-                        if (player.getY() > 0) {
-                            player.setY(player.getY() - 10);
-                        }
-                        refresh();
-                        break;
-                    case DOWN:
-                        graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-                        if (player.getY() < GAME_HEIGHT - player.getHeight()) {
-                            player.setY(player.getY() + 10);
-                        }
+                        ((Dino) player).jump();
                         refresh();
                         break;
                     case LEFT:
@@ -151,14 +140,9 @@ public class MyGame extends Application {
                         break;
                     case RIGHT:
                         graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-                        if (player.getX() < GAME_WIDTH - player.getWidth()) {
+                        if (player.getX() < GAME_WIDTH) {
                             player.setX(player.getX() + 10);
                         }
-                        refresh();
-                        break;
-                    case SPACE:
-                        graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-                        // TODO: make the player jump
                         refresh();
                         break;
 
@@ -174,16 +158,11 @@ public class MyGame extends Application {
                     case UP:
                         refresh();
                         break;
-                    case DOWN:
-                        refresh();
-                        break;
+
                     case LEFT:
                         refresh();
                         break;
                     case RIGHT:
-                        refresh();
-                        break;
-                    case SPACE:
                         refresh();
                         break;
                     // Detect the key via its code like LEFT, RIGHT, UP, DOWN, ENTER etc.
