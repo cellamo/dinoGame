@@ -57,6 +57,7 @@ public class MyGame extends Application {
 
     private boolean gameStarted = false;
     private boolean gameOver = false;
+    private boolean isPeeking = true;
 
     // Your game parameters
     static final int GAME_WIDTH = 1000;
@@ -96,16 +97,85 @@ public class MyGame extends Application {
     }
 
     private void showStartScreen() {
-        graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-        background.render(graphicsContext);
+        AnimationTimer startScreenTimer = new AnimationTimer() {
+            private long lastUpdate = 0;
+            private double titleScale = 1.0;
+            private boolean growing = true;
+            private double dinoX = -70;
+            private boolean peekingIn = true;
 
-        graphicsContext.setFill(Color.BLACK);
-        graphicsContext.setFont(Font.font("Arial", FontWeight.BOLD, 40));
-        graphicsContext.fillText("HUBBM-Dino", GAME_WIDTH / 2 - 100, GAME_HEIGHT / 2 - 50);
+            @Override
+            public void handle(long now) {
+                if (now - lastUpdate >= 16_666_666) {  // 60 FPS
+                    graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+                    background.render(graphicsContext);
+                    platform.render(graphicsContext);
 
-        graphicsContext.setFont(Font.font("Arial", FontWeight.NORMAL, 20));
-        graphicsContext.fillText("Press SPACE to start", GAME_WIDTH / 2 - 80, GAME_HEIGHT / 2 + 50);
+                    // Draw card background
+                    double cardWidth = 400;
+                    double cardHeight = 200;
+                    double cardX = (GAME_WIDTH - cardWidth) / 2;
+                    double cardY = (GAME_HEIGHT - cardHeight) / 2;
+
+                    // Pulsing title animation
+                    if (growing) {
+                        titleScale += 0.002;
+                        if (titleScale >= 1.05) growing = false;
+                    } else {
+                        titleScale -= 0.002;
+                        if (titleScale <= 0.95) growing = true;
+                    }
+
+                    graphicsContext.setFill(Color.WHITE);
+                    graphicsContext.fillRoundRect(cardX, cardY, cardWidth, cardHeight, 20, 20);
+
+                    graphicsContext.setStroke(Color.BLACK);
+                    graphicsContext.setLineWidth(3);
+                    graphicsContext.strokeRoundRect(cardX, cardY, cardWidth, cardHeight, 20, 20);
+
+                    // Pulsing title animation
+                    if (growing) {
+                        titleScale += 0.002;
+                        if (titleScale >= 1.05) growing = false;
+                    } else {
+                        titleScale -= 0.002;
+                        if (titleScale <= 0.95) growing = true;
+                    }
+
+                    graphicsContext.save();
+                    graphicsContext.setTransform(titleScale, 0, 0, titleScale, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 30);
+                    graphicsContext.setFill(Color.BLACK);
+                    graphicsContext.setFont(Font.font("Arial", FontWeight.BOLD, 40));
+                    graphicsContext.fillText("HUBBM-Dino", -120, 0);
+
+                    graphicsContext.restore();
+
+
+
+                    if (isPeeking) {
+                        if (peekingIn) {
+                            dinoX += 2;
+                            if (dinoX >= 0) peekingIn = false;
+                        } else {
+                            dinoX -= 2;
+                            if (dinoX <= -70) peekingIn = true;
+                        }
+                        player.setX(dinoX);
+                        player.setY(Dino.LAND_Y);
+                        player.render(graphicsContext);
+                    }
+                    graphicsContext.setFill(Color.BLACK);
+
+                    graphicsContext.setFont(Font.font("Arial", FontWeight.NORMAL, 20));
+                    graphicsContext.fillText("Press SPACE to start", GAME_WIDTH / 2 - 100, GAME_HEIGHT / 2 + 50);
+
+                    lastUpdate = now;
+                }
+            }
+        };
+        startScreenTimer.start();
     }
+
 
 
     /**
@@ -191,6 +261,7 @@ public class MyGame extends Application {
                         if (!gameStarted) {
                             gameStarted = true;
                             showScoreAndLevel();
+                            isPeeking = false;
                             timer.start();
                         }
                         break;
@@ -420,27 +491,82 @@ public class MyGame extends Application {
     }
 
     private void showGameOverScreen() {
-        // Clear the canvas
-        graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        final int[] displayedScore = {0};
+        final double[] dinoY = {player.getY()};
+        final double fallSpeed = 5;
+        final double[] backgroundSpeed = {5.0}; // Initial speed
 
-        // Render background
-        background.render(graphicsContext);
-        background2.render(graphicsContext);
+        AnimationTimer gameOverTimer = new AnimationTimer() {
+            private long lastUpdate = 0;
 
+            @Override
+            public void handle(long now) {
+                if (now - lastUpdate >= 16_666_666) {  // 60 FPS
+                    graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+                    // Animate background
+                    background.setX(background.getX() - backgroundSpeed[0]);
+                    background2.setX(background2.getX() - backgroundSpeed[0]);
 
-        // Display Game Over text
-        graphicsContext.setFill(Color.BLACK);
-        graphicsContext.setFont(Font.font("Arial", FontWeight.BOLD, 50));
-        graphicsContext.fillText("Game Over", GAME_WIDTH / 2 - 150, GAME_HEIGHT / 2);
+                    // Reset background positions
+                    if (background.getX() <= -background.getWidth()) {
+                        background.setX(background2.getX() + background2.getWidth());
+                    }
+                    if (background2.getX() <= -background2.getWidth()) {
+                        background2.setX(background.getX() + background.getWidth());
+                    }
 
-        // Display final score
-        graphicsContext.setFont(Font.font("Arial", FontWeight.NORMAL, 30));
-        graphicsContext.fillText("Your Score: " + scoreInt, GAME_WIDTH / 2 - 100, GAME_HEIGHT / 2 + 50);
+                    background.render(graphicsContext);
+                    background2.render(graphicsContext);
+                    platform.render(graphicsContext);
 
-        // Optionally, display instructions to restart
-        graphicsContext.setFont(Font.font("Arial", FontWeight.NORMAL, 20));
-        graphicsContext.fillText("Press SPACE to restart", GAME_WIDTH / 2 - 90, GAME_HEIGHT / 2 + 90);
+                    // Slow down background
+                    if (backgroundSpeed[0] > 0) {
+                        backgroundSpeed[0] -= 0.1;
+                    } else {
+                        backgroundSpeed[0] = 0;
+                    }
+
+                    // Falling Dino animation
+                    if (dinoY[0] < GAME_HEIGHT) {
+                        dinoY[0] += fallSpeed;
+                        player.setY(dinoY[0]);
+                        player.render(graphicsContext);
+                    }
+
+// Draw card background
+                    double cardWidth = 400;
+                    double cardHeight = 250;
+                    double cardX = (GAME_WIDTH - cardWidth) / 2;
+                    double cardY = (GAME_HEIGHT - cardHeight) / 2;
+
+                    graphicsContext.setFill(Color.WHITE);
+                    graphicsContext.fillRoundRect(cardX, cardY, cardWidth, cardHeight, 20, 20);
+
+                    graphicsContext.setStroke(Color.BLACK);
+                    graphicsContext.setLineWidth(3);
+                    graphicsContext.strokeRoundRect(cardX, cardY, cardWidth, cardHeight, 20, 20);
+
+                    // Render text on the card
+                    graphicsContext.setFill(Color.BLACK);
+                    graphicsContext.setFont(Font.font("Arial", FontWeight.BOLD, 50));
+                    graphicsContext.fillText("Game Over", cardX + 70, cardY + 70);
+
+                    // Animated score counter
+                    if (displayedScore[0] < scoreInt) {
+                        displayedScore[0] += Math.max(1, (scoreInt - displayedScore[0]) / 10);
+                    }
+                    graphicsContext.setFont(Font.font("Arial", FontWeight.NORMAL, 30));
+                    graphicsContext.fillText("Your Score: " + displayedScore[0], cardX + 100, cardY + 130);
+
+                    graphicsContext.setFont(Font.font("Arial", FontWeight.NORMAL, 20));
+                    graphicsContext.fillText("Press SPACE to restart", cardX + 90, cardY + 180);
+                    lastUpdate = now;
+                }
+            }
+        };
+        gameOverTimer.start();
     }
+
 
     private void hideScoreAndLevel() {
         scoreText.setVisible(false);
@@ -451,4 +577,10 @@ public class MyGame extends Application {
         scoreText.setVisible(true);
         levelText.setVisible(true);
     }
+
+    private void resetDinoPosition() {
+        player.setX(-70);
+        ((Dino) player).setEntering(true);
+    }
+
 }
