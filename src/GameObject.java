@@ -14,6 +14,7 @@ public class GameObject {
     private double y;
     private double width;
     private double height;
+    private boolean passed = false;
 
     public GameObject(String image, double x, double y, double width, double height) {
         this.image = new Image(image);
@@ -67,5 +68,13 @@ public class GameObject {
 
     public void setHeight(double height) {
         this.height = height;
+    }
+
+    public boolean isPassed() {
+        return passed;
+    }
+
+    public void setPassed(boolean passed) {
+        this.passed = passed;
     }
 }

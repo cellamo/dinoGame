@@ -14,9 +14,26 @@ public class Dino extends GameObject{
     public static final int LAND_Y = 320;
     private boolean isJumping = false;
     private Rectangle rect;
+
+    private boolean isEntering = true;
+    private final double ENTER_SPEED = 5;
+
     public Dino(String image, double x, double y, double width, double height) {
         super(image, x, y, width, height);
+    }
 
+    public void enterAnimation() {
+        if (isEntering) {
+            setX(getX() + ENTER_SPEED);
+            if (getX() >= 60) {  // Final position
+                setX(60);
+                isEntering = false;
+            }
+        }
+    }
+
+    public boolean isEntering() {
+        return isEntering;
     }
 
     @Override
@@ -58,7 +75,7 @@ public class Dino extends GameObject{
                     isJumping = false;
                     velocity = 0;
                 }
-                System.out.println("Velocity: " + velocity);
+                // System.out.println("Velocity: " + velocity);
 
             }
             {

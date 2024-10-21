@@ -52,6 +52,7 @@ public class MyGame extends Application {
     Text scoreText;
     Text levelText;
 
+    private boolean gameStarted = false;
 
     // Your game parameters
     static final int GAME_WIDTH = 1000;
@@ -90,6 +91,19 @@ public class MyGame extends Application {
         primaryStage.show();
     }
 
+    private void showStartScreen() {
+        graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        background.render(graphicsContext);
+
+        graphicsContext.setFill(Color.BLACK);
+        graphicsContext.setFont(Font.font("Arial", FontWeight.BOLD, 40));
+        graphicsContext.fillText("HUBBM-Dino", GAME_WIDTH / 2 - 100, GAME_HEIGHT / 2 - 50);
+
+        graphicsContext.setFont(Font.font("Arial", FontWeight.NORMAL, 20));
+        graphicsContext.fillText("Press SPACE to start", GAME_WIDTH / 2 - 80, GAME_HEIGHT / 2 + 50);
+    }
+
+
     /**
      * Init game objects and parameters like key event listeners, timers etc.
      */
@@ -100,6 +114,7 @@ public class MyGame extends Application {
         graphicsContext = gameCanvas.getGraphicsContext2D();
         rootViewContainer.getChildren().add(gameCanvas);
 
+        player = new Dino("res/player.png", -70, Dino.LAND_Y, 70, 70);
 
         // TODO: Init game objects and parameters like key event listeners, timers etc.
         obstacles = new ArrayList<>();
@@ -123,7 +138,7 @@ public class MyGame extends Application {
         scoreText.setFill(Color.MEDIUMVIOLETRED);
         rootViewContainer.getChildren().add(scoreText);
 
-
+        hideScoreAndLevel();
 
         platform = new GameObject("res/platform.png", 0, 0, 1000, 20);
         platform.setX(0);
@@ -137,10 +152,12 @@ public class MyGame extends Application {
 
         player.render(graphicsContext);
 
+        showStartScreen();
+
         initKeyEventListeners();
         initTimer();
 
-        timer.start();
+        // timer.start();
     }
 
 
@@ -156,6 +173,13 @@ public class MyGame extends Application {
             @Override
             public void handle(KeyEvent event) {
                 switch (event.getCode()) {
+                    case SPACE:
+                        if (!gameStarted) {
+                            gameStarted = true;
+                            showScoreAndLevel();
+                            timer.start();
+                        }
+                        break;
                     case UP: // Jump
                         graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
@@ -167,7 +191,7 @@ public class MyGame extends Application {
                             lastUpPressTimestamp.set(currentTimestamp);
 
                             // Put the code you want to execute once per second here
-                            ((Dino)player).jump();
+                            ((Dino) player).jump();
                         }
                         break;
                     case LEFT:
@@ -223,7 +247,6 @@ public class MyGame extends Application {
         }
 
 
-
     }
 
     /**
@@ -232,10 +255,7 @@ public class MyGame extends Application {
      * and update your game score etc. This is the main lifecycle of your game.
      */
     void initTimer() {
-
         Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
-
-
             if (obstacles.size() <= 3) {
                 int random = (int) ((Math.random() * 10 + 1) / 3);
                 if (random == 0) {
@@ -248,21 +268,21 @@ public class MyGame extends Application {
                     }
                 }
             }
-
-        }
-
-        ));
+        }));
         timeline.setCycleCount(Animation.INDEFINITE);
         timeline.play();
 
         timer = new AnimationTimer() {
+            private boolean gameStarted = false;
+
             @Override
             public void handle(long now) {
 
+                if (!gameStarted) {
+                    gameStarted = true;
+                    player.setX(-70); // Reset player position for entering animation
+                }
 
-                /* In this method's body, you can  redraw your objects to make a movement effect,
-                   check whether any of your objects collided or not,
-                   and update your game score etc. This is the main lifecycle of your game.*/
                 rootViewContainer.getChildren().remove(scoreText);
                 scoreText.setText("Score: " + scoreInt);
                 rootViewContainer.getChildren().add(scoreText);
@@ -271,28 +291,40 @@ public class MyGame extends Application {
                 levelText.setText("Level: " + levelInt);
                 rootViewContainer.getChildren().add(levelText);
 
-                // background image clears canvas
                 background.render(graphicsContext);
                 platform.render(graphicsContext);
-                player.render(graphicsContext);
 
-                for (GameObject obstacle : obstacles) {
-                    if (obstacle.getX() < 0) {
-                        obstacles.remove(obstacle);
-                        scoreInt++;
-                        if (scoreInt % 10 == 0) {
-                            levelInt++;
+                if (((Dino) player).isEntering()) {
+                    ((Dino) player).enterAnimation();
+                } else {
+                    for (GameObject obstacle : obstacles) {
+                        if (obstacle.getX() < 0) {
+                            obstacles.remove(obstacle);
+                            scoreInt++;
+                            if (scoreInt % 10 == 0) {
+                                levelInt++;
+                            }
+                            break;
                         }
-                        break;
                     }
+                    for (GameObject obstacle : obstacles) {
+                        obstacle.setX(obstacle.getX() - (5 + levelInt));
+                        obstacle.render(graphicsContext);
+                    }
+                }
 
-                }
-                for (GameObject obstacle : obstacles) {
-                    obstacle.setX(obstacle.getX() - (5 + levelInt));
-                    obstacle.render(graphicsContext);
-                }
+                player.render(graphicsContext);
             }
         };
     }
 
+    private void hideScoreAndLevel() {
+        scoreText.setVisible(false);
+        levelText.setVisible(false);
+    }
+
+    private void showScoreAndLevel() {
+        scoreText.setVisible(true);
+        levelText.setVisible(true);
+    }
 }
