@@ -44,6 +44,8 @@ public class MyGame extends Application {
     ArrayList<GameObject> obstacles;
     GameObject platform;
     GameObject background;
+    GameObject background2;
+
     GameObject bird;
     GameObject cactus;
     GameObject bigCactus;
@@ -121,6 +123,8 @@ public class MyGame extends Application {
         obstacles = new ArrayList<>();
 
         background = new GameObject("res/background.png", 0, 0, 1000, 400);
+        background2 = new GameObject("res/background.png", background.getWidth(), 0, 1000, 400);
+
         background.render(graphicsContext);
 
         levelText = new Text();
@@ -292,7 +296,21 @@ public class MyGame extends Application {
                 levelText.setText("Level: " + levelInt);
                 rootViewContainer.getChildren().add(levelText);
 
+                // Move both backgrounds to the left
+                double backgroundSpeed = 1; // Adjust the speed as needed
+                background.setX(background.getX() - backgroundSpeed);
+                background2.setX(background2.getX() - backgroundSpeed);
+
+                // Reset background positions to create a seamless scroll
+                if (background.getX() <= -background.getWidth()) {
+                    background.setX(background2.getX() + background2.getWidth());
+                }
+                if (background2.getX() <= -background2.getWidth()) {
+                    background2.setX(background.getX() + background.getWidth());
+                }
+
                 background.render(graphicsContext);
+                background2.render(graphicsContext);
                 platform.render(graphicsContext);
 
                 if (((Dino) player).isEntering()) {
