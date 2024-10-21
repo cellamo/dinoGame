@@ -21,6 +21,7 @@ import javafx.scene.input.KeyEvent;
 
 import java.sql.Time;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Timer;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -297,17 +298,26 @@ public class MyGame extends Application {
                 if (((Dino) player).isEntering()) {
                     ((Dino) player).enterAnimation();
                 } else {
-                    for (GameObject obstacle : obstacles) {
-                        if (obstacle.getX() < 0) {
-                            obstacles.remove(obstacle);
+                    Iterator<GameObject> iterator = obstacles.iterator();
+                    while (iterator.hasNext()) {
+                        GameObject obstacle = iterator.next();
+
+                        // Remove obstacle if it is off the screen
+                        if (obstacle.getX() + obstacle.getWidth() < 0) {
+                            iterator.remove();
+                            continue;
+                        }
+
+                        // Increment score when obstacle passes player for the first time
+                        if (!obstacle.isPassed() && obstacle.getX() < player.getX()) {
+                            obstacle.setPassed(true); // Mark obstacle as passed
                             scoreInt++;
                             if (scoreInt % 10 == 0) {
                                 levelInt++;
                             }
-                            break;
                         }
-                    }
-                    for (GameObject obstacle : obstacles) {
+
+                        // Move obstacle and render
                         obstacle.setX(obstacle.getX() - (5 + levelInt));
                         obstacle.render(graphicsContext);
                     }
