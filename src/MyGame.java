@@ -317,6 +317,28 @@ public class MyGame extends Application {
                 levelText.setText("Level: " + levelInt);
                 rootViewContainer.getChildren().add(levelText);
 
+                // Update player's position and apply gravity
+                if (((Dino) player).isJumping()) {
+                    // Apply gravity based on whether the dino is ascending or descending
+                    if (((Dino) player).getVelocity() < 0) {
+                        // Ascending: use normal gravity
+                        ((Dino) player).setVelocity(((Dino) player).getVelocity() + ((Dino) player).getGravity());
+                    } else {
+                        // Descending: use higher gravity to increase fall speed
+                        ((Dino) player).setVelocity((float) (((Dino) player).getVelocity() + ((Dino) player).getGravity() * 2.0));
+                    }
+
+                    // Update the player's Y position
+                    player.setY(player.getY() + ((Dino) player).getVelocity());
+
+                    // Check if player has landed
+                    if (player.getY() >= Dino.LAND_Y) {
+                        player.setY(Dino.LAND_Y);
+                        ((Dino) player).setJumping(false);
+                        ((Dino) player).setVelocity(0);
+                    }
+                }
+
                 // Move both backgrounds to the left
                 double backgroundSpeed = 0.8;
                 background.setX(background.getX() - backgroundSpeed);

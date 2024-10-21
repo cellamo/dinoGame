@@ -66,36 +66,26 @@ public class Dino extends GameObject{
 
 
     public void jump() {
-
         if (!isJumping) {
             isJumping = true;
-            velocity = -10;
+            velocity = -10;  // Adjust this value to modify the jump height
         }
-        Animation jumpAnim = new Transition() {
-            @Override
-            protected void interpolate(double frac) {
-                setY(getY() + velocity);
-                if (velocity <= 10) {
-                    velocity += GRAVITY;
-                }
-                if (getY() >= LAND_Y) {
-                    setY(LAND_Y);
-                    isJumping = false;
-                    velocity = 0;
-                }
-                // System.out.println("Velocity: " + velocity);
-
-            }
-            {
-
-                setCycleDuration(Duration.millis(1000));
-            }
-
-        };
-
-        jumpAnim.play();
-
-
-
     }
+
+    public Rectangle getRect() {
+        return rect;
     }
+
+    public void setRect(Rectangle rect) {
+        this.rect = rect;
+    }
+
+    public double getENTER_SPEED() {
+        return ENTER_SPEED;
+    }
+
+    public float getGravity() {
+        return GRAVITY;
+    }
+
+}
