@@ -57,6 +57,14 @@ public class Dino extends GameObject{
         return velocity;
     }
 
+    public void setEntering(boolean entering) {
+        this.isEntering = entering;
+        if (entering) {
+            setX(-70); // Reset position for entering animation
+        }
+    }
+
+
     public void jump() {
 
         if (!isJumping) {

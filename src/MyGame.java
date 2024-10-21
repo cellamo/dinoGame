@@ -56,6 +56,7 @@ public class MyGame extends Application {
     Text levelText;
 
     private boolean gameStarted = false;
+    private boolean gameOver = false;
 
     // Your game parameters
     static final int GAME_WIDTH = 1000;
@@ -177,6 +178,14 @@ public class MyGame extends Application {
 
             @Override
             public void handle(KeyEvent event) {
+                if (gameOver) {
+                    // Only allow SPACE key when game is over
+                    if (event.getCode() == KeyCode.SPACE) {
+                        resetGame();
+                    }
+                    return; // Ignore all other key presses
+                }
+
                 switch (event.getCode()) {
                     case SPACE:
                         if (!gameStarted) {
@@ -198,6 +207,7 @@ public class MyGame extends Application {
                             // Put the code you want to execute once per second here
                             ((Dino) player).jump();
                         }
+                        refresh();
                         break;
                     case LEFT:
                         graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -285,10 +295,14 @@ public class MyGame extends Application {
         timeline.play();
 
         timer = new AnimationTimer() {
-            private boolean gameStarted = false;
 
             @Override
             public void handle(long now) {
+                if (gameOver) {
+                    showGameOverScreen();
+                    stop(); // Stop the AnimationTimer
+                    return;
+                }
 
                 if (!gameStarted) {
                     gameStarted = true;
@@ -345,12 +359,65 @@ public class MyGame extends Application {
                         // Move obstacle and render
                         obstacle.setX(obstacle.getX() - (5 + levelInt));
                         obstacle.render(graphicsContext);
+
+                        // **Collision detection**
+                        if (player.getBounds().intersects(obstacle.getBounds())) {
+                            gameOver = true;
+                            break; // Exit the loop if collision occurs
+                        }
                     }
                 }
 
                 player.render(graphicsContext);
             }
         };
+    }
+
+    private void resetGame() {
+        // Reset game variables
+        gameStarted = false;
+        gameOver = false;
+        scoreInt = 0;
+        levelInt = 1;
+
+        // Clear obstacles
+        obstacles.clear();
+
+        // Reset player position
+        player.setX(-70);
+        player.setY(Dino.LAND_Y);
+        ((Dino) player).setEntering(true);
+
+        // Clear and render initial graphics
+        graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        showStartScreen();
+        showScoreAndLevel();
+
+        // Restart the timer
+        timer.start();
+    }
+
+    private void showGameOverScreen() {
+        // Clear the canvas
+        graphicsContext.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+        // Render background
+        background.render(graphicsContext);
+        background2.render(graphicsContext);
+
+
+        // Display Game Over text
+        graphicsContext.setFill(Color.BLACK);
+        graphicsContext.setFont(Font.font("Arial", FontWeight.BOLD, 50));
+        graphicsContext.fillText("Game Over", GAME_WIDTH / 2 - 150, GAME_HEIGHT / 2);
+
+        // Display final score
+        graphicsContext.setFont(Font.font("Arial", FontWeight.NORMAL, 30));
+        graphicsContext.fillText("Your Score: " + scoreInt, GAME_WIDTH / 2 - 100, GAME_HEIGHT / 2 + 50);
+
+        // Optionally, display instructions to restart
+        graphicsContext.setFont(Font.font("Arial", FontWeight.NORMAL, 20));
+        graphicsContext.fillText("Press SPACE to restart", GAME_WIDTH / 2 - 90, GAME_HEIGHT / 2 + 90);
     }
 
     private void hideScoreAndLevel() {

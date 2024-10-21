@@ -1,7 +1,8 @@
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 
 /**
  * With this object, you can store information of position like x, y, width, height of your object.
@@ -29,6 +30,9 @@ public class GameObject {
         graphicsContext.drawImage(image, x, y, width, height);
     }
 
+    public Rectangle2D getBounds() {
+        return new Rectangle2D(x, y, width, height);
+    }
 
     public Image getImage() {
         return image;
