@@ -262,18 +262,25 @@ public class MyGame extends Application {
     void initTimer() {
         Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
             if (obstacles.size() <= 3) {
-                int random = (int) ((Math.random() * 10 + 1) / 3);
-                if (random == 0) {
-                    obstacles.add(new Cactus("res/cactus.png", 1000, 290, 50, 100));
-                } else if (random == 1) {
-                    obstacles.add(new BigCactus("res/cactus_big.png", 1000, 290, 100, 100));
-                } else if (random == 2) {
-                    if (levelInt > 1) {
-                        obstacles.add(new Bird("res/bird1.png", 1000, 250, 50, 50));
-                    }
+                int random = (int) (Math.random() * 3);
+                System.out.println(random);
+                if (levelInt == 1) random = 1;
+                switch (random) {
+                    case 0:
+                        obstacles.add(new Cactus("res/cactus.png", 1000, 290, 50, 100));
+                        break;
+                    case 1:
+                        obstacles.add(new BigCactus("res/cactus_big.png", 1000, 290, 100, 100));
+                        break;
+                    case 2:
+                        if (levelInt > 1) {
+                            obstacles.add(new Bird("res/bird1.png", "res/bird2.png", 1000, 250, 50, 50));
+                        }
+                        break;
                 }
             }
         }));
+
         timeline.setCycleCount(Animation.INDEFINITE);
         timeline.play();
 
@@ -297,7 +304,7 @@ public class MyGame extends Application {
                 rootViewContainer.getChildren().add(levelText);
 
                 // Move both backgrounds to the left
-                double backgroundSpeed = 1; // Adjust the speed as needed
+                double backgroundSpeed = 0.8;
                 background.setX(background.getX() - backgroundSpeed);
                 background2.setX(background2.getX() - backgroundSpeed);
 
