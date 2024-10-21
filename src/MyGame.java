@@ -1,4 +1,3 @@
-import com.sun.org.apache.bcel.internal.generic.INSTANCEOF;
 import javafx.animation.*;
 import javafx.application.Application;
 import javafx.event.EventHandler;
